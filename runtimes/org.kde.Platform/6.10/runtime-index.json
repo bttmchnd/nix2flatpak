@@ -1,4 +1,9 @@
 {
+  "versions": {
+    "glibc": "2.40",
+    "libstdcxx": "6.0.34",
+    "qt": "6.10.2"
+  },
   "data": {
     "glib-schemas": [
       "org.freedesktop.pulseaudio.gschema.xml",
