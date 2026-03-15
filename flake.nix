@@ -11,6 +11,17 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
+        # pkgs with insecure olm allowed (needed for neochat)
+        pkgsWithOlm = import nixpkgs {
+          inherit system;
+          config.permittedInsecurePackages = [ "olm-3.2.16" ];
+        };
+
+        # Python with dependencies for our scripts
+        scriptsPython = pkgs.python3.withPackages (ps: [
+          ps.pyelftools
+        ]);
+
         nix2flatpak-scripts = pkgs.rustPlatform.buildRustPackage {
           pname = "nix2flatpak-scripts";
           version = "0.1.0";
@@ -64,6 +75,21 @@
               sockets = [ "x11" "wayland" "pulseaudio" ];  # x11 needed: Dolphin forces xcb
               devices = [ "all" ];  # gamepads, USB adapters
               filesystems = [ "host:ro" ];  # access game files
+            };
+            skipAbiChecks = true;
+          };
+
+          # NeoChat (KDE Matrix client) as a Flatpak
+          neochat-flatpak = mkFlatpak {
+            appId = "org.kde.neochat";
+            package = pkgsWithOlm.kdePackages.neochat;
+            runtime = "org.kde.Platform//6.10";
+            runtimeIndex = ./runtimes/org.kde.Platform/6.10/runtime-index.json;
+            permissions = {
+              share = [ "network" "ipc" ];
+              sockets = [ "fallback-x11" "wayland" "pulseaudio" ];
+              devices = [ "dri" ];
+              filesystems = [ "xdg-download" ];
             };
             skipAbiChecks = true;
           };
