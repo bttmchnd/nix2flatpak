@@ -15,6 +15,7 @@
 , extraLibs ? []
 , trustRuntime ? []
 , extraEnv ? {}
+, skipAbiChecks ? false       # bypass glibc/libstdc++/Qt version checks
 }:
 
 let
@@ -69,7 +70,8 @@ in stdenv.mkDerivation {
       --package ${package} \
       --runtime-index ${runtimeIndex} \
       --closure-file closure \
-      --output dedup-plan.json
+      --output dedup-plan.json \
+      ${lib.optionalString skipAbiChecks "--warn-abi-only"}
 
     echo "=== Step 2: Rewriting files ==="
     mkdir -p flatpak-build/files

@@ -49,6 +49,7 @@
               sockets = [ "fallback-x11" "wayland" "pulseaudio" ];
               devices = [ "dri" ];
             };
+            skipAbiChecks = true;
           };
 
           # Dolphin Emulator as a Flatpak
@@ -64,6 +65,7 @@
               devices = [ "all" ];  # gamepads, USB adapters
               filesystems = [ "host:ro" ];  # access game files
             };
+            skipAbiChecks = true;
           };
         };
 
