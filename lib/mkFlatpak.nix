@@ -162,26 +162,29 @@ in stdenv.mkDerivation {
 
     mkdir -p $out
 
+    # Use bare-user-only mode: content is stored uncompressed, so
+    # build-export avoids the costly zlib compression pass.
     echo "=== Step 5: Creating OSTree repo and Flatpak bundle ==="
-    ostree --repo=$out/repo init --mode=archive
+    ostree --repo=repo init --mode=bare-user-only
 
     # Use flatpak build-export instead of raw ostree commit
     # This sets xa.metadata and other Flatpak-specific commit metadata
     flatpak build-export \
       --disable-sandbox \
+      --disable-fsync \
       --subject="nix2flatpak build of ${appId}" \
-      $out/repo \
+      repo \
       flatpak-build \
       ${branch}
 
     flatpak build-bundle \
-      $out/repo \
+      repo \
       $out/${appId}.flatpak \
       ${appId} \
       ${branch}
 
-    # Keep unpacked dir for inspection/testing
-    cp -r flatpak-build $out/flatpak-dir
+    # Keep unpacked dir for inspection/testing (move, not copy)
+    mv flatpak-build $out/flatpak-dir
 
     # Build info
     cat > $out/build-info.json << 'BUILDINFO'

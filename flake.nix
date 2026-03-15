@@ -11,10 +11,18 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        # Python with dependencies for our scripts
-        scriptsPython = pkgs.python3.withPackages (ps: [
-          ps.pyelftools
-        ]);
+        # Patch OSTree to use multithreaded LZMA for static delta compression.
+        # Upstream uses single-threaded lzma_easy_encoder at level 8 (since 2014).
+        # lzma_stream_encoder_mt is deterministic (fixed block boundaries), so
+        # this does not break Nix reproducibility.
+        ostree-fast = pkgs.ostree.overrideAttrs (old: {
+          postPatch = (old.postPatch or "") + ''
+            substituteInPlace src/libostree/ostree-lzma-compressor.c \
+              --replace-fail \
+                'res = lzma_easy_encoder (&self->lstream, 8, LZMA_CHECK_CRC64);' \
+                '{ lzma_mt mt_opts = { .flags = 0, .threads = lzma_cputhreads(), .block_size = 4 * 1024 * 1024, .timeout = 0, .preset = 8, .check = LZMA_CHECK_CRC64 }; if (mt_opts.threads == 0) mt_opts.threads = 1; res = lzma_stream_encoder_mt(&self->lstream, &mt_opts); }'
+          '';
+        });
 
         nix2flatpak-scripts = pkgs.rustPlatform.buildRustPackage {
           pname = "nix2flatpak-scripts";
@@ -30,9 +38,14 @@
           cargoLock.lockFile = ./Cargo.lock;
         };
 
+        # Rebuild flatpak against patched ostree so build-bundle uses MT LZMA
+        flatpak-fast = pkgs.flatpak.override { ostree = ostree-fast; };
+
         mkFlatpak = pkgs.callPackage ./lib/mkFlatpak.nix {
           inherit nix2flatpak-scripts;
-          inherit (pkgs) patchelf ostree flatpak file;
+          inherit (pkgs) patchelf file;
+          ostree = ostree-fast;
+          flatpak = flatpak-fast;
         };
 
       in {
