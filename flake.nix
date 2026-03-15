@@ -67,12 +67,31 @@
             };
             skipAbiChecks = true;
           };
+
+          # Example: GNOME Calculator as a Flatpak (GNOME runtime)
+          gnome-calculator-flatpak = mkFlatpak {
+            appId = "org.gnome.Calculator";
+            package = pkgs.gnome-calculator;
+            runtime = "org.gnome.Platform//49";
+            runtimeIndex = ./runtimes/org.gnome.Platform/49/runtime-index.json;
+            permissions = {
+              share = [ "ipc" ];
+              sockets = [ "fallback-x11" "wayland" ];
+              devices = [ "dri" ];
+            };
+          };
         };
 
         checks = {
           # Structural validation of the KCalc Flatpak build
           kcalc-flatpak-structure = pkgs.callPackage ./tests/kcalc-flatpak.nix {
             kcalc-flatpak = self.packages.${system}.kcalc-flatpak;
+            inherit (pkgs) patchelf file;
+          };
+
+          # Structural validation of the GNOME Calculator Flatpak build
+          gnome-calculator-flatpak-structure = pkgs.callPackage ./tests/gnome-calculator-flatpak.nix {
+            gnome-calculator-flatpak = self.packages.${system}.gnome-calculator-flatpak;
             inherit (pkgs) patchelf file;
           };
         };
