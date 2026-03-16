@@ -12,6 +12,8 @@
 , desktopFile ? null
 , icon ? null
 , appdata ? null
+, appName ? null              # display name (default: read from .desktop Name=)
+, developer ? null            # upstream developer/author name
 , extraLibs ? []
 , trustRuntime ? []
 , extraEnv ? {}
@@ -49,6 +51,12 @@ let
   metadata = generateMetadata {
     inherit appId runtime sdk command permissions extraEnv;
     system = stdenv.hostPlatform.system;
+  };
+
+  generateAppstream = callPackage ./appstream.nix { };
+
+  fallbackAppstream = generateAppstream {
+    inherit appId package appName developer;
   };
 
 in stdenv.mkDerivation {
@@ -154,6 +162,81 @@ in stdenv.mkDerivation {
       fi
     ''}
 
+    # Copy AppStream metadata (user-provided > package-provided > generated from nixpkgs meta)
+    mkdir -p flatpak-build/export/share/metainfo
+    metainfoFile="flatpak-build/export/share/metainfo/${appId}.metainfo.xml"
+    ${if appdata != null then ''
+      cp --no-preserve=mode ${appdata} "$metainfoFile"
+    '' else ''
+      appstreamFound=false
+      for metainfoDir in "${package}/share/metainfo" "${package}/share/appdata"; do
+        if [ -d "$metainfoDir" ]; then
+          for f in "$metainfoDir"/*.xml; do
+            if [ -f "$f" ]; then
+              cp --no-preserve=mode "$f" "$metainfoFile"
+              appstreamFound=true
+              break 2
+            fi
+          done
+        fi
+      done
+      if [ "$appstreamFound" = false ]; then
+        cp --no-preserve=mode ${fallbackAppstream} "$metainfoFile"
+      fi
+    ''}
+
+    # Inject <name> from the .desktop file if the metainfo doesn't already have one
+    if ! grep -q '<name>' "$metainfoFile"; then
+      desktopName=""
+      deskFile="flatpak-build/export/share/applications/${appId}.desktop"
+      if [ -f "$deskFile" ]; then
+        desktopName=$(grep -m1 '^Name=' "$deskFile" | cut -d= -f2-)
+      fi
+      if [ -n "$desktopName" ]; then
+        sed -i "s|</id>|</id>\n  <name>$desktopName</name>|" "$metainfoFile"
+      fi
+    fi
+
+    # Generate app-info catalog (gzipped AppStream collection XML).
+    # flatpak build-export --update-appstream looks for this in files/share/app-info/xmls/.
+    mkdir -p flatpak-build/files/share/app-info/xmls
+
+    # Copy icons into app-info for the appstream branch.
+    # build-export looks for icons under files/share/app-info/icons/flatpak/{64x64,128x128}/.
+    # Find the best available source icon from hicolor and copy it to both sizes.
+    sourceIcon=""
+    for candidate in \
+      flatpak-build/export/share/icons/hicolor/128x128/apps/${appId}.png \
+      flatpak-build/export/share/icons/hicolor/256x256/apps/${appId}.png \
+      flatpak-build/export/share/icons/hicolor/512x512/apps/${appId}.png \
+      flatpak-build/export/share/icons/hicolor/64x64/apps/${appId}.png \
+      flatpak-build/export/share/icons/hicolor/scalable/apps/${appId}.svg; do
+      if [ -f "$candidate" ]; then
+        sourceIcon="$candidate"
+        break
+      fi
+    done
+    if [ -n "$sourceIcon" ]; then
+      for sz in 64x64 128x128; do
+        mkdir -p "flatpak-build/files/share/app-info/icons/flatpak/$sz"
+        cp "$sourceIcon" "flatpak-build/files/share/app-info/icons/flatpak/$sz/${appId}.png"
+      done
+    fi
+
+    {
+      echo '<?xml version="1.0" encoding="UTF-8"?>'
+      echo '<components version="1.0">'
+      # Strip the XML declaration from the metainfo file before embedding
+      sed '1{/<?xml/d}' "$metainfoFile" | sed '/<\/component>/d'
+      # Insert icon references if we have icons
+      if [ -n "$sourceIcon" ]; then
+        echo '  <icon type="cached" width="64" height="64">${appId}.png</icon>'
+        echo '  <icon type="cached" width="128" height="128">${appId}.png</icon>'
+      fi
+      echo '</component>'
+      echo '</components>'
+    } | gzip > "flatpak-build/files/share/app-info/xmls/${appId}.xml.gz"
+
     runHook postBuild
   '';
 
@@ -172,6 +255,7 @@ in stdenv.mkDerivation {
     flatpak build-export \
       --disable-sandbox \
       --disable-fsync \
+      --update-appstream \
       --subject="nix2flatpak build of ${appId}" \
       repo \
       flatpak-build \
