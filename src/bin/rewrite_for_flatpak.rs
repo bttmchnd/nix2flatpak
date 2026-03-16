@@ -657,6 +657,75 @@ fn rewrite_dbus_service(filepath: &Path) {
 }
 
 // ---------------------------------------------------------------------------
+// Symlink target rewriting
+// ---------------------------------------------------------------------------
+
+/// Rewrite symlinks whose targets are absolute `/nix/store/…` paths.
+fn rewrite_symlinks(
+    output_dir: &Path,
+    rewrite_map: &HashMap<String, String>,
+    drop_hashes: &HashSet<String>,
+) -> u32 {
+    let mut count = 0u32;
+
+    // Sort rewrites longest-first for correct prefix matching
+    let mut sorted_rewrites: Vec<(&str, &str)> = rewrite_map
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    sorted_rewrites.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+
+    for entry in WalkDir::new(output_dir).into_iter().filter_map(|e| e.ok()) {
+        let path = entry.path();
+        let Ok(meta) = path.symlink_metadata() else {
+            continue;
+        };
+        if !meta.file_type().is_symlink() {
+            continue;
+        }
+        let Ok(target) = fs::read_link(path) else {
+            continue;
+        };
+        let target_str = target.to_string_lossy();
+        if !target_str.starts_with("/nix/store/") {
+            continue;
+        }
+
+        // Try rewrite map (longest match first)
+        let mut new_target = None;
+        for (old_path, new_path) in &sorted_rewrites {
+            if target_str.starts_with(old_path) {
+                new_target = Some(format!("{new_path}{}", &target_str[old_path.len()..]));
+                break;
+            }
+        }
+
+        // If no explicit rewrite, check if the hash is dropped
+        if new_target.is_none() {
+            let hash = store_path_hash(&target_str);
+            if drop_hashes.contains(hash) {
+                // Map to /usr equivalent
+                let re = Regex::new(r"^/nix/store/[^/]+/").unwrap();
+                let rel = re.replace(&target_str, "").to_string();
+                new_target = Some(format!("/usr/{rel}"));
+            } else {
+                // Kept but not in rewrite map — prepend /app
+                new_target = Some(format!("/app{target_str}"));
+            }
+        }
+
+        if let Some(new) = new_target {
+            let _ = fs::remove_file(path);
+            let _ = std::os::unix::fs::symlink(&new, path);
+            eprintln!("  Rewrite symlink: {} -> {new}", path.display());
+            count += 1;
+        }
+    }
+
+    count
+}
+
+// ---------------------------------------------------------------------------
 // Runtime compatibility symlinks
 // ---------------------------------------------------------------------------
 
@@ -870,7 +939,11 @@ fn main() -> Result<()> {
         }
     }
 
-    // Step 5: Create runtime compatibility symlinks
+    // Step 5: Rewrite symlinks pointing to /nix/store/…
+    eprintln!("Rewriting symlinks...");
+    let symlink_count = rewrite_symlinks(output_dir, &rewrite_map, &drop_hashes);
+
+    // Step 6: Create runtime compatibility symlinks
     if let Some(ri_path) = &cli.runtime_index {
         eprintln!("Creating runtime compat symlinks...");
         let runtime_index: Value =
@@ -878,12 +951,12 @@ fn main() -> Result<()> {
         create_runtime_compat_symlinks(output_dir, &runtime_index, &cli.arch_triplet);
     }
 
-    // Step 6: Create bin symlinks
+    // Step 7: Create bin symlinks
     eprintln!("Creating bin symlinks...");
     create_bin_symlinks(output_dir, &plan);
 
     eprintln!(
-        "Rewrote {elf_count} ELF files, {text_count} text files, {wrapper_count} compiled wrappers"
+        "Rewrote {elf_count} ELF files, {text_count} text files, {wrapper_count} compiled wrappers, {symlink_count} symlinks"
     );
     eprintln!("Done.");
 
