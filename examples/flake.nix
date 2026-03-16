@@ -39,8 +39,8 @@
           gnome-calculator = mkFlatpak {
             appId = "org.gnome.Calculator";
             package = pkgs.gnome-calculator;
-            runtime = "org.gnome.Platform//49";
-            runtimeIndex = ../runtimes/org.gnome.Platform/49/runtime-index.json;
+            runtime = "org.gnome.Platform/49";
+
             permissions = {
               share = [ "ipc" ];
               sockets = [ "fallback-x11" "wayland" ];
@@ -52,8 +52,8 @@
           kcalc = mkFlatpak {
             appId = "org.kde.kcalc";
             package = pkgs.kdePackages.kcalc;
-            runtime = "org.kde.Platform//6.10";
-            runtimeIndex = ../runtimes/org.kde.Platform/6.10/runtime-index.json;
+            runtime = "org.kde.Platform/6.10";
+
             permissions = {
               share = [ "ipc" ];
               sockets = [ "fallback-x11" "wayland" "pulseaudio" ];
@@ -70,8 +70,8 @@
               # The official KDE Flatpak builds without it too.
               qtwebview = null;
             };
-            runtime = "org.kde.Platform//6.10";
-            runtimeIndex = ../runtimes/org.kde.Platform/6.10/runtime-index.json;
+            runtime = "org.kde.Platform/6.10";
+
             permissions = {
               share = [ "network" "ipc" ];
               sockets = [ "fallback-x11" "wayland" "pulseaudio" ];
@@ -85,8 +85,8 @@
           signal-desktop = mkFlatpak {
             appId = "org.signal.Signal";
             package = pkgs.signal-desktop;
-            runtime = "org.gnome.Platform//49";
-            runtimeIndex = ../runtimes/org.gnome.Platform/49/runtime-index.json;
+            runtime = "org.gnome.Platform/49";
+
             command = "signal-desktop";
             extraEnv = {
               ELECTRON_DISABLE_SANDBOX = "1";  # SUID sandbox doesn't work inside Flatpak
@@ -116,8 +116,8 @@
             package = pkgs.processing.override {
               batik = pkgs.batik.override { jre = pkgs.jdk17; };
             };
-            runtime = "org.gnome.Platform//49";
-            runtimeIndex = ../runtimes/org.gnome.Platform/49/runtime-index.json;
+            runtime = "org.gnome.Platform/49";
+
             command = "Processing";
             icon = "${pkgs.processing}/lib/app/resources/lib/icons/app-256.png";
             permissions = {
@@ -133,8 +133,8 @@
           dolphin-emu = mkFlatpak {
             appId = "org.DolphinEmu.dolphin-emu";
             package = pkgs.dolphin-emu;
-            runtime = "org.kde.Platform//6.10";
-            runtimeIndex = ../runtimes/org.kde.Platform/6.10/runtime-index.json;
+            runtime = "org.kde.Platform/6.10";
+
             command = "dolphin-emu";
             permissions = {
               share = [ "network" "ipc" ];

@@ -1,11 +1,12 @@
 { lib, stdenv, nix2flatpak-scripts, patchelf, ostree, flatpak, file
 , callPackage
+, runtimesDir ? null         # path to runtimes/ directory for auto-lookup
 }:
 
 { appId
 , package
-, runtime                    # e.g., "org.kde.Platform//6.10"
-, runtimeIndex               # path to runtime-index.json
+, runtime                    # e.g., "org.kde.Platform/6.10"
+, runtimeIndex ? null        # path to runtime-index.json (inferred from runtime if omitted)
 , command ? package.meta.mainProgram or (lib.getName package)
 , sdk ? null                 # default: inferred from runtime
 , permissions ? {}
@@ -22,9 +23,14 @@
 
 let
   # Parse runtime string
-  runtimeParts = lib.splitString "//" runtime;
+  runtimeParts = lib.splitString "/" runtime;
   runtimeName = builtins.elemAt runtimeParts 0;
   runtimeBranch = builtins.elemAt runtimeParts 1;
+
+  resolvedRuntimeIndex =
+    if runtimeIndex != null then runtimeIndex
+    else if runtimesDir != null then runtimesDir + "/${runtimeName}/${runtimeBranch}/runtime-index.json"
+    else throw "mkFlatpak: either runtimeIndex or runtimesDir must be provided";
 
   # Flatpak arch
   archMap = {
@@ -76,7 +82,7 @@ in stdenv.mkDerivation {
     echo "=== Step 1: Analyzing closure ==="
     nix2flatpak-analyze-closure \
       --package ${package} \
-      --runtime-index ${runtimeIndex} \
+      --runtime-index ${resolvedRuntimeIndex} \
       --closure-file closure \
       --output dedup-plan.json \
       ${lib.optionalString skipAbiChecks "--warn-abi-only"}
@@ -88,7 +94,7 @@ in stdenv.mkDerivation {
       --output-dir flatpak-build/files \
       --arch-triplet ${archTriplet} \
       --patchelf ${patchelf}/bin/patchelf \
-      --runtime-index ${runtimeIndex}
+      --runtime-index ${resolvedRuntimeIndex}
 
     echo "=== Step 3: Setting up metadata ==="
     cp ${metadata} flatpak-build/metadata

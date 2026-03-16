@@ -1,7 +1,7 @@
 { lib, writeText }:
 
 { appId
-, runtime          # e.g., "org.kde.Platform//6.10"
+, runtime          # e.g., "org.kde.Platform/6.10"
 , sdk ? null
 , command
 , permissions ? {}
@@ -10,8 +10,8 @@
 }:
 
 let
-  # Parse runtime: "org.kde.Platform//6.10" → name + branch
-  runtimeParts = lib.splitString "//" runtime;
+  # Parse runtime: "org.kde.Platform/6.10" → name + branch
+  runtimeParts = lib.splitString "/" runtime;
   runtimeName = builtins.elemAt runtimeParts 0;
   runtimeBranch = builtins.elemAt runtimeParts 1;
 

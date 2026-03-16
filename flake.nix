@@ -46,6 +46,7 @@
           inherit (pkgs) patchelf file;
           ostree = ostree-fast;
           flatpak = flatpak-fast;
+          runtimesDir = ./runtimes;
         };
 
       in {
