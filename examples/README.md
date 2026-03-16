@@ -42,3 +42,16 @@ flatpak install --user $(nix build .#processing --no-link --print-out-paths)/*.f
 ```sh
 flatpak install --user $(nix build .#dolphin-emu --no-link --print-out-paths)/*.flatpak
 ```
+
+## Bundle sizes
+
+Here's a table comparing the Flatpak bundle sizes to the original application sizes and their Nix closure. The latter includes all the dependencies from the Nix store that would normally need to be distributed without relinking:
+
+| **Application**  | **Nix Main Package** | **Nix Closure** | **Flatpak Bundle** |
+| ---------------- | -------------------: | --------------: | -----------------: |
+| GNOME Calculator |               12 MiB |         1.0 GiB |            1.7 MiB |
+| KCalc            |              3.7 MiB |         1.6 GiB |             15 MiB |
+| NeoChat          |               20 MiB |         1.8 GiB |             46 MiB |
+| Signal Desktop   |              153 MiB |         1.6 GiB |            148 MiB |
+| Processing       |              234 MiB |         1.6 GiB |            446 MiB |
+| Dolphin          |               81 MiB |         1.3 GiB |             42 MiB |
