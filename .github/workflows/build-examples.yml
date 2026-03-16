@@ -1,0 +1,27 @@
+name: Build examples
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - gnome-calculator
+          - kcalc
+          - neochat
+          - signal-desktop
+          - processing
+          - dolphin-emu
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Build ${{ matrix.example }}
+        run: nix build ./examples#${{ matrix.example }} --print-build-logs
