@@ -16,7 +16,6 @@
 , appName ? null              # display name (default: read from .desktop Name=)
 , developer ? null            # upstream developer/author name
 , extraLibs ? []
-, trustRuntime ? []
 , extraEnv ? {}
 , skipAbiChecks ? false       # bypass glibc/libstdc++/Qt version checks
 }:
@@ -125,8 +124,8 @@ in stdenv.mkDerivation {
     for f in flatpak-build/export/share/applications/*.desktop; do
       if [ -f "$f" ]; then
         sed -i \
-          -e 's|Exec=/nix/store/[^/]*/bin/||' \
-          -e 's|TryExec=/nix/store/[^/]*/bin/||' \
+          -e 's|^TryExec=/nix/store/[^/]*/bin/|TryExec=|' \
+          -e 's|^Exec=/nix/store/[^/]*/bin/|Exec=|' \
           -e 's|^Icon=.*|Icon=${appId}|' \
           "$f"
       fi
