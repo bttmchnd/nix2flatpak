@@ -42,14 +42,18 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "path": "..",
-        "type": "path"
+        "lastModified": 1773751566,
+        "narHash": "sha256-PL10ijLW957IKKmJVpHvSIA1M4ykq49Rst79dVW/hZw=",
+        "owner": "neobrain",
+        "repo": "nix2flatpak",
+        "rev": "41889d9844443f27eb3560bf62a08e644730ae9a",
+        "type": "github"
       },
       "original": {
-        "path": "..",
-        "type": "path"
-      },
-      "parent": []
+        "owner": "neobrain",
+        "repo": "nix2flatpak",
+        "type": "github"
+      }
     },
     "nixpkgs": {
       "locked": {
