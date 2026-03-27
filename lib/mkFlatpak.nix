@@ -153,6 +153,7 @@ in stdenv.mkDerivation {
       esac
     '' else ''
       if [ -d "${package}/share/icons" ]; then
+        # Fixed-size PNG icons
         find ${package}/share/icons -name "*.png" | while read -r pngfile; do
           # Flatpak rejects icons larger than 512x512
           if echo "$pngfile" | grep -qE '(1024x1024|2048x2048)'; then
@@ -163,6 +164,14 @@ in stdenv.mkDerivation {
           mkdir -p "$destdir"
           # Rename icon to match app ID (Flatpak requirement)
           cp "$pngfile" "$destdir/${appId}.png"
+        done
+
+        # Vector SVG icons
+        find ${package}/share/icons -name "*.svg" | while read -r svgfile; do
+          relpath="''${svgfile#${package}/share/icons/}"
+          destdir="flatpak-build/export/share/icons/$(dirname "$relpath")"
+          mkdir -p "$destdir"
+          cp "$svgfile" "$destdir/${appId}.svg"
         done
       fi
     ''}
