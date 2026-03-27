@@ -1,4 +1,4 @@
-{ lib, stdenv, nix2flatpak-scripts, patchelf, ostree, flatpak, file
+{ lib, stdenv, nix2flatpak-scripts, patchelf, ostree, flatpak, file, librsvg
 , callPackage
 , runtimesDir ? null         # path to runtimes/ directory for auto-lookup
 }:
@@ -71,7 +71,7 @@ in stdenv.mkDerivation {
   dontUnpack = true;
   dontFixup = true;
 
-  nativeBuildInputs = [ nix2flatpak-scripts patchelf ostree flatpak file ];
+  nativeBuildInputs = [ nix2flatpak-scripts patchelf ostree flatpak file librsvg ];
 
   exportReferencesGraph = [ "closure" package ];
 
@@ -131,8 +131,7 @@ in stdenv.mkDerivation {
       fi
     done
 
-    # Copy icons (only PNG — SVG validation requires gdk-pixbuf SVG loader
-    # which is unavailable in the nix build sandbox)
+    # Copy icons
     ${if icon != null then ''
       iconFile="${icon}"
       case "$iconFile" in
@@ -254,6 +253,10 @@ in stdenv.mkDerivation {
     # build-export avoids the costly zlib compression pass.
     echo "=== Step 5: Creating OSTree repo and Flatpak bundle ==="
     ostree --repo=repo init --mode=bare-user-only
+
+    # Make gdk-pixbuf aware of librsvg's SVG loader so flatpak build-export
+    # can validate SVG icons.
+    export GDK_PIXBUF_MODULE_FILE="${librsvg}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"
 
     # Use flatpak build-export instead of raw ostree commit
     # This sets xa.metadata and other Flatpak-specific commit metadata
