@@ -147,7 +147,8 @@ in stdenv.mkDerivation {
           cp "$iconFile" "flatpak-build/export/share/icons/hicolor/''${iconSize}x''${iconSize}/apps/${appId}.png"
           ;;
         *)
-          echo "WARNING: Unknown icon format: $iconFile"
+          echo "ERROR: Unsupported icon format: $iconFile (must be .svg or .png)"
+          exit 1
           ;;
       esac
     '' else ''
@@ -208,6 +209,7 @@ in stdenv.mkDerivation {
     # Copy icons into app-info for the appstream branch.
     # build-export looks for icons under files/share/app-info/icons/flatpak/{64x64,128x128}/.
     # Find the best available source icon from hicolor and copy it to both sizes.
+    # Note that SVG is not supported here, so we must convert to PNG in that case.
     sourceIcon=""
     for candidate in \
       flatpak-build/export/share/icons/hicolor/128x128/apps/${appId}.png \
@@ -221,9 +223,18 @@ in stdenv.mkDerivation {
       fi
     done
     if [ -n "$sourceIcon" ]; then
-      for sz in 64x64 128x128; do
-        mkdir -p "flatpak-build/files/share/app-info/icons/flatpak/$sz"
-        cp "$sourceIcon" "flatpak-build/files/share/app-info/icons/flatpak/$sz/${appId}.png"
+      for sz in 64 128; do
+        mkdir -p "flatpak-build/files/share/app-info/icons/flatpak/''${sz}x''${sz}"
+        case "$sourceIcon" in
+          *.svg)
+            ${librsvg}/bin/rsvg-convert -w "$sz" -h "$sz" -o \
+              "flatpak-build/files/share/app-info/icons/flatpak/''${sz}x''${sz}/${appId}.png" \
+              "$sourceIcon"
+            ;;
+          *)
+            cp "$sourceIcon" "flatpak-build/files/share/app-info/icons/flatpak/''${sz}x''${sz}/${appId}.png"
+            ;;
+        esac
       done
     fi
 
