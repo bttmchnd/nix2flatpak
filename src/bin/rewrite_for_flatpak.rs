@@ -301,6 +301,51 @@ fn rewrite_elf(
             eprintln!("WARNING: patchelf failed on {}: {e}", filepath.display());
         }
     }
+
+    // Rewrite DT_NEEDED entries that contain absolute /nix/store/ paths.
+    // Nix records full paths when a library lacks a SONAME.
+    let Ok(data) = fs::read(filepath) else {
+        return;
+    };
+    let Ok(elf) = Elf::parse(&data) else {
+        return;
+    };
+    for lib in &elf.libraries {
+        if !lib.starts_with("/nix/store/") {
+            continue;
+        }
+        let after_store = &lib["/nix/store/".len()..];
+        let basename = after_store.split('/').next().unwrap_or("");
+        let hash_part = match basename.find('-') {
+            Some(idx) => &basename[..idx],
+            None => basename,
+        };
+
+        let new_needed = if drop_hashes.contains(hash_part) {
+            // Library is in the runtime — use bare filename so it resolves via RPATH
+            Path::new(lib)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string()
+        } else {
+            // Library is kept — rewrite to /app/nix/store/ prefix
+            format!("/app{lib}")
+        };
+
+        eprintln!(
+            "  Rewriting DT_NEEDED: {lib} -> {new_needed} in {}",
+            filepath.display()
+        );
+        let _ = Command::new(patchelf)
+            .args([
+                "--replace-needed",
+                lib,
+                &new_needed,
+                &filepath.to_string_lossy(),
+            ])
+            .output();
+    }
 }
 
 // ---------------------------------------------------------------------------
