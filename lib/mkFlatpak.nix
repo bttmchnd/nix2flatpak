@@ -137,14 +137,14 @@ in stdenv.mkDerivation {
       case "$iconFile" in
         *.svg)
           mkdir -p flatpak-build/export/share/icons/hicolor/scalable/apps
-          cp "$iconFile" flatpak-build/export/share/icons/hicolor/scalable/apps/${appId}.svg
+          cp --no-preserve=mode "$iconFile" flatpak-build/export/share/icons/hicolor/scalable/apps/${appId}.svg
           ;;
         *.png)
           # Detect PNG dimensions for proper hicolor directory
           iconSize=$(file "$iconFile" | grep -oP '\d+ x \d+' | head -1 | cut -d' ' -f1)
           iconSize=''${iconSize:-256}
           mkdir -p "flatpak-build/export/share/icons/hicolor/''${iconSize}x''${iconSize}/apps"
-          cp "$iconFile" "flatpak-build/export/share/icons/hicolor/''${iconSize}x''${iconSize}/apps/${appId}.png"
+          cp --no-preserve=mode "$iconFile" "flatpak-build/export/share/icons/hicolor/''${iconSize}x''${iconSize}/apps/${appId}.png"
           ;;
         *)
           echo "ERROR: Unsupported icon format: $iconFile (must be .svg or .png)"
@@ -163,7 +163,7 @@ in stdenv.mkDerivation {
           destdir="flatpak-build/export/share/icons/$(dirname "$relpath")"
           mkdir -p "$destdir"
           # Rename icon to match app ID (Flatpak requirement)
-          cp "$pngfile" "$destdir/${appId}.png"
+          cp --no-preserve=mode "$pngfile" "$destdir/${appId}.png"
         done
 
         # Vector SVG icons
@@ -171,7 +171,7 @@ in stdenv.mkDerivation {
           relpath="''${svgfile#${package}/share/icons/}"
           destdir="flatpak-build/export/share/icons/$(dirname "$relpath")"
           mkdir -p "$destdir"
-          cp "$svgfile" "$destdir/${appId}.svg"
+          cp --no-preserve=mode "$svgfile" "$destdir/${appId}.svg"
         done
       fi
     ''}
