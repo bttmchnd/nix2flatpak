@@ -1,0 +1,102 @@
+{
+  "data": {
+    "mime": false
+  },
+  "executables": {},
+  "metadata": {
+    "Environment": {
+      "ALSA_CONFIG_DIR": "/usr/share/alsa",
+      "ALSA_CONFIG_PATH": "/usr/share/alsa/alsa-flatpak.conf",
+      "GI_TYPELIB_PATH": "/app/lib/girepository-1.0",
+      "GST_PLUGIN_SYSTEM_PATH": "/app/lib/gstreamer-1.0:/usr/lib/extensions/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/codecs-extra/lib/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0",
+      "PYTHONUSERBASE": "/var/data/python",
+      "XDG_DATA_DIRS": "/app/share:/usr/share:/usr/share/runtime/share:/run/host/user-share:/run/host/share",
+      "__EGL_EXTERNAL_PLATFORM_CONFIG_DIRS": "/etc/egl/egl_external_platform.d:/usr/lib/x86_64-linux-gnu/GL/egl/egl_external_platform.d:/usr/share/egl/egl_external_platform.d"
+    },
+    "Extension org.freedesktop.Platform.GL": {
+      "add-ld-path": "lib",
+      "autodelete": "false",
+      "autoprune-unless": "active-gl-driver",
+      "directory": "lib/x86_64-linux-gnu/GL",
+      "download-if": "active-gl-driver",
+      "enable-if": "active-gl-driver",
+      "merge-dirs": "vulkan/icd.d;glvnd/egl_vendor.d;egl/egl_external_platform.d;OpenCL/vendors;lib/dri;lib/d3d;lib/gbm;vulkan/explicit_layer.d;vulkan/implicit_layer.d;vdpau",
+      "no-autodownload": "true",
+      "subdirectories": "true",
+      "version": "1.4",
+      "versions": "25.08;25.08-extra;1.4"
+    },
+    "Extension org.freedesktop.Platform.GL.Debug": {
+      "autoprune-unless": "active-gl-driver",
+      "directory": "lib/debug/usr/lib/x86_64-linux-gnu/GL",
+      "enable-if": "active-gl-driver",
+      "merge-dirs": "vulkan/icd.d;glvnd/egl_vendor.d;egl/egl_external_platform.d;OpenCL/vendors;lib/dri;lib/d3d;lib/gbm;vulkan/explicit_layer.d;vulkan/implicit_layer.d;vdpau",
+      "no-autodownload": "true",
+      "subdirectories": "true",
+      "version": "1.4",
+      "versions": "25.08;25.08-extra;1.4"
+    },
+    "Extension org.freedesktop.Platform.GStreamer": {
+      "directory": "lib/extensions/gstreamer-1.0",
+      "no-autodownload": "true",
+      "subdirectories": "true"
+    },
+    "Extension org.freedesktop.Platform.Icontheme": {
+      "directory": "share/runtime/share/icons",
+      "no-autodownload": "true",
+      "subdirectories": "true",
+      "version": "1.0"
+    },
+    "Extension org.freedesktop.Platform.Locale": {
+      "autodelete": "true",
+      "directory": "share/runtime/locale",
+      "locale-subset": "true"
+    },
+    "Extension org.freedesktop.Platform.Timezones": {
+      "directory": "share/zoneinfo"
+    },
+    "Extension org.freedesktop.Platform.VAAPI.Intel": {
+      "add-ld-path": "lib",
+      "autodelete": "false",
+      "autoprune-unless": "have-intel-gpu",
+      "directory": "lib/x86_64-linux-gnu/dri/intel-vaapi-driver",
+      "download-if": "have-intel-gpu",
+      "no-autodownload": "true"
+    },
+    "Extension org.freedesktop.Platform.VAAPI.nvidia": {
+      "add-ld-path": "lib",
+      "autodelete": "false",
+      "autoprune-unless": "have-kernel-module-nvidia",
+      "directory": "lib/x86_64-linux-gnu/dri/nvidia-vaapi-driver",
+      "download-if": "have-kernel-module-nvidia",
+      "no-autodownload": "true"
+    },
+    "Extension org.freedesktop.Platform.VulkanLayer": {
+      "directory": "lib/extensions/vulkan",
+      "merge-dirs": "share/vulkan/implicit_layer.d;share/vulkan/explicit_layer.d;",
+      "no-autodownload": "true",
+      "subdirectories": "true",
+      "version": "25.08"
+    },
+    "Extension org.freedesktop.Platform.codecs-extra": {
+      "add-ld-path": "lib",
+      "autodelete": "true",
+      "directory": "lib/x86_64-linux-gnu/codecs-extra",
+      "version": "25.08-extra"
+    },
+    "Extension org.gtk.Gtk3theme": {
+      "directory": "share/runtime/share/themes",
+      "download-if": "active-gtk-theme",
+      "no-autodownload": "true",
+      "subdirectories": "true",
+      "subdirectory-suffix": "gtk-3.0",
+      "version": "3.22"
+    },
+    "Runtime": {
+      "name": "org.freedesktop.Platform",
+      "runtime": "org.freedesktop.Platform/x86_64/25.08",
+      "sdk": "org.freedesktop.Sdk/x86_64/25.08"
+    }
+  },
+  "sonames": {}
+}
